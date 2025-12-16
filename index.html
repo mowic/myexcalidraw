@@ -3,25 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excalidraw 白板 - EdgeOne</title>
-    <link rel="stylesheet" href="https://unpkg.com/@excalidraw/excalidraw@0.17.0/dist/excalidraw.min.css" />
+    <title>Excalidraw 白板</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@excalidraw/excalidraw@0.17.0/dist/excalidraw.min.css" />
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
         #root { width: 100%; height: 100vh; }
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #555;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3681f6;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-container { display: none; padding: 20px; text-align: center; color: #d32f2f; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div class="loading-container" id="loading">
+            <div class="spinner"></div>
+            <p>正在加载白板组件...</p>
+        </div>
+        <div class="error-container" id="error">
+            <h3>加载遇到问题</h3>
+            <p>请刷新页面，或检查网络连接。如果问题持续，请联系管理员。</p>
+            <button onclick="window.location.reload()">刷新页面</button>
+        </div>
+    </div>
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@excalidraw/excalidraw@0.17.0/dist/excalidraw.min.js"></script>
+    <!-- 使用 jsDelivr CDN，稳定性更高 -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@excalidraw/excalidraw@0.17.0/dist/excalidraw.min.js"></script>
 
     <script>
-        const { Excalidraw } = window.ExcalidrawLib;
-        const rootElement = document.getElementById('root');
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(React.createElement(Excalidraw));
+        // 全局初始化函数，确保所有依赖都已加载
+        function initExcalidraw() {
+            // 1. 检查核心依赖对象是否存在
+            if (typeof window.React === 'undefined' ||
+                typeof window.ReactDOM === 'undefined' ||
+                typeof window.ExcalidrawLib === 'undefined' ||
+                !window.ExcalidrawLib.Excalidraw) {
+                console.error('缺少必要的库文件，请检查CDN是否加载成功。');
+                showError();
+                return;
+            }
+
+            // 2. 隐藏加载动画
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) loadingEl.style.display = 'none';
+
+            // 3. 渲染白板组件
+            try {
+                const { Excalidraw } = window.ExcalidrawLib;
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(React.createElement(Excalidraw));
+                console.log('Excalidraw 已成功加载！');
+            } catch (renderError) {
+                console.error('渲染组件时出错:', renderError);
+                showError();
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+        }
+
+        // 方案A: 如果所有脚本在底部，DOM加载完成后直接初始化
+        document.addEventListener('DOMContentLoaded', initExcalidraw);
+
+        // 方案B: 额外添加一个 window.onload 作为保障，确保所有外部资源（如图片、CSS）也加载完毕
+        window.addEventListener('load', initExcalidraw);
     </script>
 </body>
 </html>
